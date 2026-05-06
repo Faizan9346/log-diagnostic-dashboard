@@ -10,10 +10,11 @@ function App() {
   const [history, setHistory] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [fileName, setFileName] = useState("");
 
   const handleAnalyze = async () => {
     if (!logs.trim()) {
-      setError("Please paste log data before analyzing.");
+      setError("Please paste log data or upload a log file before analyzing.");
       return;
     }
 
@@ -35,6 +36,7 @@ function App() {
       setHistory([
         {
           logs,
+          fileName: fileName || "Manual input",
           result: response.data.final_result,
           time: new Date().toLocaleString(),
         },
@@ -54,6 +56,41 @@ function App() {
     setSummary(null);
     setAi(null);
     setError("");
+    setFileName("");
+  };
+
+  const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+
+    if (!file) {
+      return;
+    }
+
+    const fileNameLower = file.name.toLowerCase();
+    const isValidFile =
+      fileNameLower.endsWith(".log") || fileNameLower.endsWith(".txt");
+
+    if (!isValidFile) {
+      setError("Invalid file type. Please upload only .log or .txt files.");
+      setFileName("");
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      const fileContent = e.target.result;
+      setLogs(fileContent);
+      setFileName(file.name);
+      setError("");
+    };
+
+    reader.onerror = () => {
+      setError("Unable to read the uploaded file.");
+      setFileName("");
+    };
+
+    reader.readAsText(file);
   };
 
   const severityClass = result?.severity?.toLowerCase() || "low";
@@ -67,7 +104,10 @@ function App() {
         <div className="logo-box">⚡</div>
         <div>
           <h1>Log Diagnostic Dashboard</h1>
-          <p>Human-built diagnostic engine for parsing logs, detecting issues, and recommending fixes.</p>
+          <p>
+            Human-built diagnostic engine for parsing logs, detecting issues,
+            and recommending fixes.
+          </p>
         </div>
       </header>
 
@@ -77,9 +117,9 @@ function App() {
             <span className="tag">Developer Debugging Tool</span>
             <h2>Turn raw logs into clear diagnostic reports</h2>
             <p>
-              Paste application or server logs. The engine parses log lines,
-              applies custom rules, ranks severity, calculates confidence, and
-              shows actionable debugging steps.
+              Paste application/server logs or upload a .log file. The engine
+              parses log lines, applies custom rules, ranks severity, calculates
+              confidence, and shows actionable debugging steps.
             </p>
           </div>
 
@@ -102,9 +142,35 @@ function App() {
                 <span>Ready</span>
               </div>
 
+              <div className="upload-box">
+                <label htmlFor="logFile">Upload log file</label>
+
+                <input
+                  id="logFile"
+                  type="file"
+                  accept=".log,.txt"
+                  onChange={handleFileUpload}
+                />
+
+                <p>
+                  Supported formats: <strong>.log</strong>, <strong>.txt</strong>
+                </p>
+
+                {fileName && (
+                  <div className="file-pill">
+                    Uploaded file: <strong>{fileName}</strong>
+                  </div>
+                )}
+              </div>
+
               <textarea
                 value={logs}
-                onChange={(e) => setLogs(e.target.value)}
+                onChange={(e) => {
+                  setLogs(e.target.value);
+                  if (!e.target.value.trim()) {
+                    setFileName("");
+                  }
+                }}
                 placeholder={`Example:
 2026-05-06 10:15:23 ERROR Connection refused at port 5432
 2026-05-06 10:15:26 WARN Retrying database connection
@@ -112,7 +178,11 @@ function App() {
               />
 
               <div className="button-row">
-                <button className="primary-btn" onClick={handleAnalyze} disabled={loading}>
+                <button
+                  className="primary-btn"
+                  onClick={handleAnalyze}
+                  disabled={loading}
+                >
                   {loading ? "Analyzing..." : "Analyze Logs"}
                 </button>
 
@@ -156,7 +226,9 @@ function App() {
                     <h3>{result.root}</h3>
                   </div>
 
-                  <span className={`badge ${severityClass}`}>{result.severity}</span>
+                  <span className={`badge ${severityClass}`}>
+                    {result.severity}
+                  </span>
                 </div>
 
                 <div className="report-section">
@@ -215,6 +287,7 @@ function App() {
                 <div className="history-item" key={index}>
                   <strong>{item.result.root}</strong>
                   <p>{item.time}</p>
+                  <p>{item.fileName}</p>
                   <span>{item.result.severity}</span>
                 </div>
               ))}
@@ -222,21 +295,30 @@ function App() {
 
             <div className="card explain-card">
               <h3>How it works</h3>
+
               <div className="step">
                 <b>1</b>
-                <p>Parser converts raw logs into structured records.</p>
+                <p>Upload or paste log data.</p>
               </div>
+
               <div className="step">
                 <b>2</b>
-                <p>Rule engine detects known failure patterns.</p>
+                <p>Parser converts raw logs into structured records.</p>
               </div>
+
               <div className="step">
                 <b>3</b>
-                <p>Aggregator chooses the most important issue.</p>
+                <p>Rule engine detects known failure patterns.</p>
               </div>
+
               <div className="step">
                 <b>4</b>
-                <p>AI can optionally enrich the explanation.</p>
+                <p>Aggregator ranks issue severity and confidence.</p>
+              </div>
+
+              <div className="step">
+                <b>5</b>
+                <p>Dashboard displays evidence and recommended fixes.</p>
               </div>
             </div>
           </aside>
