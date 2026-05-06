@@ -26,3 +26,16 @@
 
 *2026-05-06 10:15:23 ERROR Connection refused at port 5432*
 
+***## Screenshots ***
+
+### Dashboard home
+
+![Dashboard home](dashboard-home.png)
+
+### Diagnostic Report
+
+![Diagnostic Report](diagnostic-report.png)
+
+### Analysis History
+
+![Analysis History](history-section.png)
